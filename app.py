@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
 from backend.patient_service import (
     register_patient,
@@ -103,12 +104,126 @@ if page == "Dashboard":
     st.divider()
 
     # ----------------------------------------
-    # Placeholder
+    # Charts
     # ----------------------------------------
 
-    st.info(
-        "📊 Charts will be added in Phase 3.2"
-    )
+    chart_data = dashboard.sort_values("occupancy_percent", ascending=False)
+
+    left, right = st.columns(2)
+
+    with left:
+
+        fig = px.bar(
+            chart_data,
+            x="department",
+            y="occupancy_percent",
+            color="occupancy_percent",
+            title="Department Capacity Utilization",
+            labels={
+                "department": "Department",
+                "occupancy_percent": "Occupancy (%)",
+            },
+            text_auto=".1f",
+        )
+
+        fig.update_layout(
+            template="plotly_white",
+            height=400,
+            coloraxis_showscale=False,
+            margin=dict(l=20, r=20, t=50, b=20),
+        )
+
+        fig.update_traces(
+            hovertemplate="<b>%{x}</b><br>Occupancy: %{y:.1f}%<extra></extra>"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    with right:
+
+        fig = px.bar(
+            dashboard.sort_values("average_wait", ascending=False),
+            x="department",
+            y="average_wait",
+            color="average_wait",
+            title="Average Wait Time",
+            labels={
+                "department": "Department",
+                "average_wait": "Minutes",
+            },
+            text_auto=".1f",
+        )
+
+        fig.update_layout(
+            template="plotly_white",
+            height=400,
+            coloraxis_showscale=False,
+            margin=dict(l=20, r=20, t=50, b=20),
+        )
+
+        fig.update_traces(
+            hovertemplate="<b>%{x}</b><br>Wait: %{y:.1f} min<extra></extra>"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    left, right = st.columns(2)
+
+    with left:
+
+        fig = px.bar(
+            dashboard.sort_values("critical_patients", ascending=False),
+            x="department",
+            y="critical_patients",
+            color="critical_patients",
+            title="Critical Patients by Department",
+            labels={
+                "department": "Department",
+                "critical_patients": "Patients",
+            },
+            text_auto=True,
+        )
+
+        fig.update_layout(
+            template="plotly_white",
+            height=400,
+            coloraxis_showscale=False,
+            margin=dict(l=20, r=20, t=50, b=20),
+        )
+
+        fig.update_traces(
+            hovertemplate="<b>%{x}</b><br>Critical: %{y}<extra></extra>"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    with right:
+
+        fig = px.bar(
+            dashboard.sort_values("average_risk", ascending=False),
+            x="department",
+            y="average_risk",
+            color="average_risk",
+            title="Average Risk Score",
+            labels={
+                "department": "Department",
+                "average_risk": "Risk Score",
+            },
+            text_auto=".2f",
+        )
+
+        fig.update_layout(
+            template="plotly_white",
+            height=400,
+            coloraxis_showscale=False,
+            margin=dict(l=20, r=20, t=50, b=20),
+        )
+
+        fig.update_traces(
+            hovertemplate="<b>%{x}</b><br>Risk: %{y:.2f}<extra></extra>"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
 
     st.divider()
 
