@@ -37,9 +37,79 @@ page = st.sidebar.radio(
 
 if page == "Dashboard":
 
-    st.title("📊 Operations Dashboard")
-
     dashboard, recommendation = get_dashboard()
+
+    # ----------------------------------------
+    # Header
+    # ----------------------------------------
+
+    col1, col2 = st.columns([8, 2])
+
+    with col1:
+        st.title("🏥 ER Surge Intelligence")
+
+    with col2:
+        if st.button("🔄 Refresh Dashboard"):
+            st.rerun()
+
+    st.caption(
+        f"Last Updated: {pd.Timestamp.now().strftime('%d %b %Y %H:%M:%S')}"
+    )
+
+    st.divider()
+
+    # ----------------------------------------
+    # KPI Cards
+    # ----------------------------------------
+
+    total_patients = dashboard["total_patients"].sum()
+
+    avg_wait = dashboard["average_wait"].mean()
+
+    critical = dashboard["critical_patients"].sum()
+
+    avg_risk = recommendation["average_risk"]
+
+    occupancy = dashboard["occupancy_percent"].mean()
+
+    c1, c2, c3, c4, c5 = st.columns(5)
+
+    c1.metric(
+        "👥 Patients",
+        total_patients,
+    )
+
+    c2.metric(
+        "⏳ Avg Wait",
+        f"{avg_wait:.1f} min",
+    )
+
+    c3.metric(
+        "🚨 Critical",
+        critical,
+    )
+
+    c4.metric(
+        "📈 Risk",
+        recommendation["risk"],
+    )
+
+    c5.metric(
+        "🛏 Occupancy",
+        f"{occupancy:.1f}%",
+    )
+
+    st.divider()
+
+    # ----------------------------------------
+    # Placeholder
+    # ----------------------------------------
+
+    st.info(
+        "📊 Charts will be added in Phase 3.2"
+    )
+
+    st.divider()
 
     st.subheader("Department Overview")
 
@@ -54,16 +124,9 @@ if page == "Dashboard":
     st.subheader("Current Recommendation")
 
     st.metric(
-        "Risk Level",
-        recommendation["risk"],
-    )
-
-    st.metric(
         "Priority",
         recommendation["priority"],
     )
-
-    st.write("### Recommended Actions")
 
     for action in recommendation["actions"]:
         st.success(action)
