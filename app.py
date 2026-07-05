@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 
 from backend.patient_service import (
     register_patient,
