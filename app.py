@@ -237,16 +237,55 @@ if page == "Dashboard":
 
     st.divider()
 
-    st.subheader("Current Recommendation")
+    # ----------------------------------------
+    # Operational Recommendation
+    # ----------------------------------------
 
-    st.metric(
-        "Priority",
-        recommendation["priority"],
+    st.subheader("Operational Recommendation")
+
+    risk = recommendation["risk"]
+
+    if risk == "HIGH":
+        risk_badge = "🔴 HIGH"
+    elif risk == "MEDIUM":
+        risk_badge = "🟡 MEDIUM"
+    else:
+        risk_badge = "🟢 LOW"
+
+    left, right = st.columns([1, 2])
+
+    with left:
+
+        st.metric(
+            "Current Risk",
+            risk_badge,
+        )
+
+        st.metric(
+            "Priority",
+            recommendation["priority"],
+        )
+
+        st.metric(
+            "Average Wait",
+            f"{recommendation['average_wait']:.1f} min",
+        )
+
+        st.metric(
+            "Occupancy",
+            f"{recommendation['occupancy']:.1f}%",
+        )
+
+    with right:
+
+        st.markdown("### Recommended Actions")
+
+        for action in recommendation["actions"]:
+            st.success(action)
+
+    st.caption(
+        "Recommendations are generated from the ER risk engine using current operational metrics."
     )
-
-    for action in recommendation["actions"]:
-        st.success(action)
-
 # ==================================================
 # Register Patient
 # ==================================================
