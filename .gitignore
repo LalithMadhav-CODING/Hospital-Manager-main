@@ -1,0 +1,10 @@
+# Google Cloud Credentials
+credentials/
+
+# Virtual Environment
+.venv/
+venv/
+
+# Python Cache
+backend/__pycache__/
+cloud/__pycache__/
