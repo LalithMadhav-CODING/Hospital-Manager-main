@@ -6,21 +6,12 @@ from backend.config import (
 )
 
 
-def generate_recommendations(dashboard: pd.DataFrame) -> dict:
+def _build_recommendation(avg_risk, avg_wait, occupancy):
     """
-    Generate operational recommendations based on
-    department dashboard metrics.
+    Build a recommendation from operational metrics.
     """
-
-    avg_risk = dashboard["average_risk"].mean()
-    avg_wait = dashboard["average_wait"].mean()
-    occupancy = dashboard["occupancy_percent"].mean()
 
     actions = []
-
-    # ----------------------------
-    # Risk Assessment
-    # ----------------------------
 
     if avg_risk >= HIGH_RISK:
         risk = "HIGH"
@@ -29,7 +20,7 @@ def generate_recommendations(dashboard: pd.DataFrame) -> dict:
         actions.extend([
             "Open overflow beds",
             "Deploy additional nursing staff",
-            "Prioritize high-acuity patients"
+            "Prioritize high-acuity patients",
         ])
 
     elif avg_risk >= MODERATE_RISK:
@@ -38,7 +29,7 @@ def generate_recommendations(dashboard: pd.DataFrame) -> dict:
 
         actions.extend([
             "Monitor patient flow",
-            "Prepare additional beds if required"
+            "Prepare additional beds if required",
         ])
 
     else:
@@ -49,18 +40,10 @@ def generate_recommendations(dashboard: pd.DataFrame) -> dict:
             "Operations within normal limits"
         )
 
-    # ----------------------------
-    # Wait Time
-    # ----------------------------
-
     if avg_wait > 45:
         actions.append(
             "Investigate excessive patient waiting time"
         )
-
-    # ----------------------------
-    # Occupancy
-    # ----------------------------
 
     if occupancy > 90:
         actions.append(
@@ -74,4 +57,49 @@ def generate_recommendations(dashboard: pd.DataFrame) -> dict:
         "average_wait": round(avg_wait, 1),
         "occupancy": round(occupancy, 1),
         "actions": actions,
+    }
+
+def generate_recommendations(dashboard: pd.DataFrame) -> dict:
+    """
+    Generate hospital-wide and department-level recommendations.
+    """
+
+    overall = _build_recommendation(
+        dashboard["average_risk"].mean(),
+        dashboard["average_wait"].mean(),
+        dashboard["occupancy_percent"].mean(),
+    )
+
+    departments = []
+
+    for _, row in dashboard.iterrows():
+
+        department = _build_recommendation(
+            row["average_risk"],
+            row["average_wait"],
+            row["occupancy_percent"],
+        )
+
+        department["department"] = row["department"]
+        department["critical_patients"] = int(row["critical_patients"])
+
+        departments.append(department)
+
+    priority_order = {
+        "HIGH": 0,
+        "MODERATE": 1,
+        "LOW": 2,
+    }
+
+    departments.sort(
+        key=lambda x: (
+            priority_order[x["risk"]],
+            -x["occupancy"],
+            -x["average_wait"],
+        )
+    )
+
+    return {
+        "overall": overall,
+        "departments": departments,
     }

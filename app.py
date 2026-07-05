@@ -70,7 +70,7 @@ if page == "Dashboard":
 
     critical = dashboard["critical_patients"].sum()
 
-    avg_risk = recommendation["average_risk"]
+    avg_risk = recommendation["overall"]["average_risk"]
 
     occupancy = dashboard["occupancy_percent"].mean()
 
@@ -93,7 +93,7 @@ if page == "Dashboard":
 
     c4.metric(
         "📈 Risk",
-        recommendation["risk"],
+        recommendation["overall"]["risk"],
     )
 
     c5.metric(
@@ -243,7 +243,7 @@ if page == "Dashboard":
 
     st.subheader("Operational Recommendation")
 
-    risk = recommendation["risk"]
+    risk = recommendation["overall"]["risk"]
 
     if risk == "HIGH":
         risk_badge = "🔴 HIGH"
@@ -263,24 +263,24 @@ if page == "Dashboard":
 
         st.metric(
             "Priority",
-            recommendation["priority"],
+            recommendation["overall"]["priority"],
         )
 
         st.metric(
             "Average Wait",
-            f"{recommendation['average_wait']:.1f} min",
+            f"{recommendation['overall']['average_wait']:.1f} min",
         )
 
         st.metric(
             "Occupancy",
-            f"{recommendation['occupancy']:.1f}%",
+            f"{recommendation['overall']['occupancy']:.1f}%",
         )
 
     with right:
 
         st.markdown("### Recommended Actions")
 
-        for action in recommendation["actions"]:
+        for action in recommendation["overall"]["actions"]:
             st.success(action)
 
     st.caption(
