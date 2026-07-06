@@ -104,3 +104,22 @@ def compare(cpu: BenchmarkResult,
         "gpu_rows_per_second": gpu.rows_per_second,
         "speedup": speedup,
     }
+
+# ==========================================================
+# Operational Workloads
+# ==========================================================
+
+def patient_lookup(
+    dataframe: pd.DataFrame,
+    patient_id: str,
+) -> pd.DataFrame:
+    """
+    Benchmark workload:
+    Retrieve a patient using Patient ID.
+    """
+
+    result = dataframe.loc[
+        dataframe["patient_id"] == patient_id
+    ]
+
+    return result
