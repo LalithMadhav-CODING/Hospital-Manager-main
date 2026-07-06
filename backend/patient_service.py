@@ -5,6 +5,7 @@ import pandas as pd
 
 from cloud.bigquery import (
     append_patient,
+    append_patients,
     load_patients,
 )
 
@@ -84,6 +85,71 @@ def register_patient(patient_data: dict):
 
     return run_pipeline(updated_df)
 
+def register_patients(patient_list: list[dict]):
+    """
+    Register multiple patients using a single
+    BigQuery load and one analytics pipeline run.
+    """
+
+    current_df = load_patients()
+
+    patients = []
+
+    next_number = (
+        current_df["patient_id"]
+        .str.replace("P", "", regex=False)
+        .astype(int)
+        .max()
+        if not current_df.empty
+        else 0
+    )
+
+    for patient in patient_list:
+
+        next_number += 1
+
+        new_patient = patient.copy()
+
+        new_patient["patient_id"] = f"P{next_number:06d}"
+
+        new_patient["arrival_time"] = datetime.utcnow()
+
+        admitted = (
+            new_patient["triage_level"] <= 2
+            or new_patient["is_critical"]
+        )
+
+        new_patient["admitted"] = admitted
+
+        new_patient["current_status"] = (
+            "Under Treatment"
+            if admitted
+            else "Waiting"
+        )
+
+        new_patient["bed_id"] = (
+            f"{new_patient['department'][:3].upper()}-{random.randint(1,99):02d}"
+            if admitted
+            else None
+        )
+
+        new_patient["length_of_stay_min"] = 0
+
+        new_patient["disposition"] = (
+            "Admitted"
+            if admitted
+            else "Pending"
+        )
+
+        patients.append(new_patient)
+
+    patient_df = pd.DataFrame(patients)
+
+    append_patients(patient_df)
+
+    updated_df = load_patients()
+
+    return run_pipeline(updated_df)
 
 def get_dashboard():
     """

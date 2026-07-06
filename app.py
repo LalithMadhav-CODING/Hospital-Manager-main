@@ -6,6 +6,7 @@ from backend.simulate import create_routine_patient
 
 from backend.patient_service import (
     register_patient,
+    register_patients,
     get_dashboard,
 )
 from cloud.bigquery import restore_baseline
@@ -689,15 +690,21 @@ rerun the analytics pipeline, and refresh the dashboard.
 
             timestamp = datetime.now().strftime("%H:%M:%S")
 
+            patients = []
+
             progress = st.progress(0)
 
             for i in range(5):
 
-                patient = create_routine_patient()
-
-                register_patient(patient)
+                patients.append(
+                    create_routine_patient()
+                )
 
                 progress.progress((i + 1) / 5)
+
+            register_patients(patients)
+
+            progress.empty()
             
             dashboard_after, recommendation_after = get_dashboard()
             capacity = dashboard_after["occupancy_percent"].mean()
@@ -886,15 +893,13 @@ rerun the analytics pipeline, and refresh the dashboard.
 
             timestamp = datetime.now().strftime("%H:%M:%S")
 
+            patients = []
+
             progress = st.progress(0)
 
             for i in range(30):
 
                 patient = create_routine_patient()
-
-                # -----------------------------
-                # Emergency Scenario Overrides
-                # -----------------------------
 
                 patient["arrival_mode"] = random.choices(
                     ["Ambulance", "Walk-in"],
@@ -906,7 +911,9 @@ rerun the analytics pipeline, and refresh the dashboard.
                     weights=[40, 40, 20],
                 )[0]
 
-                patient["is_critical"] = random.random() < 0.40
+                patient["is_critical"] = (
+                    random.random() < 0.40
+                )
 
                 patient["wait_time_min"] = random.randint(0, 15)
 
@@ -921,9 +928,13 @@ rerun the analytics pipeline, and refresh the dashboard.
                     ]
                 )
 
-                register_patient(patient)
+                patients.append(patient)
 
                 progress.progress((i + 1) / 30)
+
+            register_patients(patients)
+
+            progress.empty()
 
             st.session_state["scenario_result"] = {
                 "title": "🚨 Mass Casualty Incident Completed",

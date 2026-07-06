@@ -41,6 +41,21 @@ def append_patient(patient_df: pd.DataFrame):
 
     job.result()
 
+def append_patients(patients_df: pd.DataFrame):
+    """
+    Append multiple patients using a single
+    BigQuery load job.
+    """
+
+    if patients_df.empty:
+        return
+
+    job = client.load_table_from_dataframe(
+        patients_df,
+        TABLE_ID,
+    )
+
+    job.result()
 
 def run_query(sql: str) -> pd.DataFrame:
     """
