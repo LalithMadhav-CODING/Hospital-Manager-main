@@ -495,10 +495,110 @@ elif page == "Register Patient":
 
 elif page == "Simulation":
 
-    st.title("🎮 Simulation")
+    st.title("🎮 ER Operations Simulation")
 
-    st.info("Coming in Phase 6.")
+    st.markdown(
+        """
+Use the controls below to simulate operational events in the Emergency Department.
 
+Each event will eventually generate new patient arrivals, update BigQuery,
+rerun the analytics pipeline, and refresh the dashboard.
+"""
+    )
+
+    st.divider()
+
+    st.subheader("Simulation Controls")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        add_one = st.button(
+            "➕ +1 Patient",
+            use_container_width=True,
+        )
+
+        ambulance = st.button(
+            "🚑 Ambulance Arrival",
+            use_container_width=True,
+        )
+
+        reset = st.button(
+            "🔄 Reset Simulation",
+            use_container_width=True,
+            type="secondary",
+        )
+
+    with col2:
+
+        add_five = st.button(
+            "➕ +5 Patients",
+            use_container_width=True,
+        )
+
+        mass_casualty = st.button(
+            "🚨 Mass Casualty",
+            use_container_width=True,
+            type="primary",
+        )
+
+    st.divider()
+
+    st.subheader("Scenario Description")
+
+    st.info(
+        """
+➕ **+1 Patient**
+
+Simulates a routine patient arrival.
+
+---
+
+➕ **+5 Patients**
+
+Simulates a short-term increase in patient inflow.
+
+---
+
+🚑 **Ambulance Arrival**
+
+Simulates the arrival of a high-acuity emergency patient.
+
+---
+
+🚨 **Mass Casualty**
+
+Simulates a large-scale emergency resulting in multiple simultaneous patient arrivals.
+
+---
+
+🔄 **Reset Simulation**
+
+Restores the hospital to the baseline dataset for a fresh demonstration.
+"""
+    )
+
+    st.divider()
+
+    st.subheader("Simulation Status")
+
+    if add_one:
+        st.success("Simulation action will be connected in Phase 6.2")
+
+    elif add_five:
+        st.success("Simulation action will be connected in Phase 6.2")
+
+    elif ambulance:
+        st.success("Simulation action will be connected in Phase 6.2")
+
+    elif mass_casualty:
+        st.success("Simulation action will be connected in Phase 6.2")
+
+    elif reset:
+        st.success("Reset action will be connected in Phase 6.3")
+
+        
 # ==================================================
 # Benchmark
 # ==================================================
