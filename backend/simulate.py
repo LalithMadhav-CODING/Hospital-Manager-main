@@ -238,3 +238,55 @@ def should_recalculate(
         return True, f"{every_n_minutes} minutes elapsed"
 
     return False, "no trigger condition met"
+
+
+# ==================================================
+# Streamlit Scenario Generators
+# ==================================================
+
+import random
+
+
+DEPARTMENTS = [
+    "General ER",
+    "General Practice",
+    "Orthopedics",
+    "Cardiology",
+    "Neurology",
+    "Gastroenterology",
+    "Renal",
+    "Pediatrics",
+]
+
+GENDERS = [
+    "Male",
+    "Female",
+    "Other",
+]
+
+RACES = [
+    "White",
+    "Black",
+    "Asian",
+    "Hispanic",
+    "Other",
+]
+
+
+def create_routine_patient():
+    """
+    Generate a routine patient that matches the
+    canonical project schema.
+    """
+
+    return {
+        "age": random.randint(18, 85),
+        "gender": random.choice(GENDERS),
+        "race": random.choice(RACES),
+        "department": random.choice(DEPARTMENTS),
+        "arrival_mode": "Walk-in",
+        "triage_level": random.randint(3, 5),
+        "wait_time_min": random.randint(10, 45),
+        "is_critical": False,
+        "case_management": random.random() < 0.15,
+    }

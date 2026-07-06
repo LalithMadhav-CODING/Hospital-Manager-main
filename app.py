@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from cloud.gemini import generate_operational_summary
+from backend.simulate import create_routine_patient
 
 from backend.patient_service import (
     register_patient,
@@ -24,15 +25,23 @@ st.set_page_config(
 
 st.sidebar.title("🏥 ER Surge Intelligence")
 
+PAGES = [
+    "Dashboard",
+    "Register Patient",
+    "Simulation",
+    "Benchmark",
+]
+
+if "page" not in st.session_state:
+    st.session_state["page"] = "Dashboard"
+
 page = st.sidebar.radio(
     "Navigation",
-    [
-        "Dashboard",
-        "Register Patient",
-        "Simulation",
-        "Benchmark",
-    ],
+    PAGES,
+    index=PAGES.index(st.session_state["page"]),
 )
+
+st.session_state["page"] = page
 
 # ==================================================
 # Dashboard
@@ -508,89 +517,256 @@ rerun the analytics pipeline, and refresh the dashboard.
 
     st.divider()
 
-    st.subheader("Simulation Controls")
+    st.subheader("Operational Scenarios")
 
     col1, col2 = st.columns(2)
 
     with col1:
 
         add_one = st.button(
-            "➕ +1 Patient",
+            "🟢 Routine Arrival",
             use_container_width=True,
         )
+        st.caption("Routine walk-in patient")
 
         ambulance = st.button(
-            "🚑 Ambulance Arrival",
+            "🔴 Critical Ambulance Arrival",
             use_container_width=True,
         )
+        st.caption("High-acuity emergency")
 
         reset = st.button(
-            "🔄 Reset Simulation",
+            "🔄 Reset Hospital State",
             use_container_width=True,
             type="secondary",
         )
+        st.caption("Restore baseline hospital")
 
     with col2:
 
         add_five = st.button(
-            "➕ +5 Patients",
+            "🟡 Patient Surge",
             use_container_width=True,
         )
+        st.caption("5 new arrivals")
 
         mass_casualty = st.button(
-            "🚨 Mass Casualty",
+            "🚨 Mass Casualty Incident",
             use_container_width=True,
             type="primary",
         )
+        st.caption("Large emergency event")
 
     st.divider()
 
-    st.subheader("Scenario Description")
-
-    st.info(
-        """
-➕ **+1 Patient**
-
-Simulates a routine patient arrival.
-
----
-
-➕ **+5 Patients**
-
-Simulates a short-term increase in patient inflow.
-
----
-
-🚑 **Ambulance Arrival**
-
-Simulates the arrival of a high-acuity emergency patient.
-
----
-
-🚨 **Mass Casualty**
-
-Simulates a large-scale emergency resulting in multiple simultaneous patient arrivals.
-
----
-
-🔄 **Reset Simulation**
-
-Restores the hospital to the baseline dataset for a fresh demonstration.
-"""
-    )
-
-    st.divider()
-
-    st.subheader("Simulation Status")
+    st.subheader("Scenario Status")
 
     if add_one:
-        st.success("Simulation action will be connected in Phase 6.2")
+
+        with st.spinner("Simulating Routine Arrival..."):
+
+            patient = create_routine_patient()
+
+            register_patient(patient)
+
+            from datetime import datetime
+
+            timestamp = datetime.now().strftime("%H:%M:%S")
+
+            st.session_state["scenario_result"] = {
+                "title": "🟢 Routine Arrival Completed",
+                "subtitle": (
+                    "1 routine patient was registered successfully. "
+                    "The operational analytics pipeline has completed."
+                ),
+                "steps": [
+                    {
+                        "icon": "✅",
+                        "title": "Patient Generated",
+                        "description": "Routine walk-in patient created successfully.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "☁️",
+                        "title": "BigQuery Updated",
+                        "description": "Patient record inserted into Google BigQuery.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "📊",
+                        "title": "Analytics Pipeline Executed",
+                        "description": "Operational metrics and dashboard data refreshed.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "⚠️",
+                        "title": "Risk Engine Updated",
+                        "description": "Department risk scores recalculated.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "📋",
+                        "title": "Recommendations Generated",
+                        "description": "Department recommendations updated.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "✨",
+                        "title": "Gemini Ready",
+                        "description": "AI operational explanations are available.",
+                        "time": timestamp,
+                    },
+                ],
+            }
+
+        st.rerun()
 
     elif add_five:
-        st.success("Simulation action will be connected in Phase 6.2")
+
+        with st.spinner("Simulating Patient Surge..."):
+
+            from datetime import datetime
+
+            timestamp = datetime.now().strftime("%H:%M:%S")
+
+            progress = st.progress(0)
+
+            for i in range(5):
+
+                patient = create_routine_patient()
+
+                register_patient(patient)
+
+                progress.progress((i + 1) / 5)
+
+            st.session_state["scenario_result"] = {
+                "title": "🟡 Patient Surge Completed",
+                "subtitle": (
+                    "5 patients were successfully registered. "
+                    "The operational analytics pipeline has completed."
+                ),
+                "steps": [
+                    {
+                        "icon": "👥",
+                        "title": "5 Patients Generated",
+                        "description": "Five routine patient arrivals simulated.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "☁️",
+                        "title": "BigQuery Updated",
+                        "description": "All patient records inserted successfully.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "📊",
+                        "title": "Analytics Pipeline Executed",
+                        "description": "Operational metrics refreshed.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "⚠️",
+                        "title": "Risk Engine Updated",
+                        "description": "Department risk scores recalculated.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "📋",
+                        "title": "Recommendations Generated",
+                        "description": "Operational recommendations updated.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "✨",
+                        "title": "Gemini Ready",
+                        "description": "AI operational explanation available.",
+                        "time": timestamp,
+                    },
+                ],
+            }
+
+        st.rerun()
 
     elif ambulance:
-        st.success("Simulation action will be connected in Phase 6.2")
+
+        with st.spinner("Simulating Critical Ambulance Arrival..."):
+
+            from datetime import datetime
+            import random
+
+            timestamp = datetime.now().strftime("%H:%M:%S")
+
+            patient = create_routine_patient()
+
+            # ----------------------------------------
+            # Convert into a Critical Ambulance Arrival
+            # ----------------------------------------
+
+            patient["arrival_mode"] = "Ambulance"
+            patient["triage_level"] = 1
+            patient["is_critical"] = True
+            patient["wait_time_min"] = random.randint(0, 5)
+
+            # Higher probability of high-pressure departments
+            patient["department"] = random.choice(
+                [
+                    "General ER",
+                    "General ER",
+                    "General ER",
+                    "Cardiology",
+                    "Neurology",
+                ]
+            )
+
+            register_patient(patient)
+
+            st.session_state["scenario_result"] = {
+                "title": "🔴 Critical Ambulance Arrival Completed",
+                "subtitle": (
+                    "A high-acuity ambulance patient was successfully registered. "
+                    "The operational analytics pipeline has completed."
+                ),
+                "steps": [
+                    {
+                        "icon": "🚑",
+                        "title": "Critical Patient Generated",
+                        "description": "Emergency ambulance arrival created.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "☁️",
+                        "title": "BigQuery Updated",
+                        "description": "Patient record inserted successfully.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "📊",
+                        "title": "Analytics Pipeline Executed",
+                        "description": "Operational metrics refreshed.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "⚠️",
+                        "title": "Risk Engine Updated",
+                        "description": "Department risk scores recalculated.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "📋",
+                        "title": "Recommendations Generated",
+                        "description": "Operational recommendations updated.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "✨",
+                        "title": "Gemini Ready",
+                        "description": "AI operational explanation available.",
+                        "time": timestamp,
+                    },
+                ],
+            }
+
+        st.rerun()
 
     elif mass_casualty:
         st.success("Simulation action will be connected in Phase 6.2")
@@ -598,7 +774,54 @@ Restores the hospital to the baseline dataset for a fresh demonstration.
     elif reset:
         st.success("Reset action will be connected in Phase 6.3")
 
-        
+    if "scenario_result" in st.session_state:
+
+        result = st.session_state["scenario_result"]
+
+        st.divider()
+
+        st.success(result["title"])
+
+        st.caption(result["subtitle"])
+
+        st.markdown("### Execution Summary")
+
+        for step in result["steps"]:
+
+            with st.container(border=True):
+
+                left, right = st.columns([7, 2])
+
+                with left:
+
+                    st.markdown(
+                        f"### {step['icon']} {step['title']}"
+                    )
+
+                    st.caption(step["description"])
+
+                with right:
+
+                    st.markdown(
+                        f"<div style='text-align:right; color:gray;'>"
+                        f"🕒 {step['time']}"
+                        f"</div>",
+                        unsafe_allow_html=True,
+                    )
+
+        st.divider()
+
+        if st.button(
+            "📊 View Updated Dashboard",
+            use_container_width=True,
+        ):
+
+            st.session_state["page"] = "Dashboard"
+
+            del st.session_state["scenario_result"]
+
+            st.rerun()
+
 # ==================================================
 # Benchmark
 # ==================================================
