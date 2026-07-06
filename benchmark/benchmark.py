@@ -4,6 +4,13 @@ import pandas as pd
 
 from cloud.bigquery import run_query
 
+from backend.features import engineer_features
+
+from backend.risk import calculate_risk
+
+from backend.recommendations import generate_recommendations
+
+from backend.pipeline import run_pipeline
 
 # =====================================================
 # Benchmark Dataset Loader
@@ -173,10 +180,209 @@ def run_department_lookup_cpu(dataset_size: str):
     )
 
 # =====================================================
+# Workload 3 - Critical Patient Queue
+# =====================================================
+
+def critical_patient_queue(df):
+    """
+    Return critical patients ordered by
+    triage level and wait time.
+    """
+
+    queue = df[
+        df["is_critical"] == True
+    ]
+
+    queue = queue.sort_values(
+        by=[
+            "triage_level",
+            "wait_time_min",
+        ]
+    )
+
+    return queue
+
+
+def run_critical_queue_cpu(dataset_size: str):
+
+    df = load_benchmark_dataset(dataset_size)
+
+    _, cpu_time = measure_execution(
+        critical_patient_queue,
+        df,
+    )
+
+    return build_result(
+        workload_name="Critical Patient Queue",
+        dataset_size=dataset_size,
+        rows=len(df),
+        cpu_time=cpu_time,
+    )
+
+# =====================================================
+# Workload 4 - Department Operations Summary
+# =====================================================
+
+def department_operations_summary(df):
+
+    return (
+
+        df.groupby("department")
+
+        .agg(
+
+            total_patients=("patient_id", "count"),
+
+            average_wait=("wait_time_min", "mean"),
+
+            critical_patients=("is_critical", "sum"),
+
+            admissions=("admitted", "sum"),
+
+        )
+
+        .reset_index()
+
+    )
+
+
+def run_department_summary_cpu(dataset_size):
+
+    df = load_benchmark_dataset(dataset_size)
+
+    _, cpu_time = measure_execution(
+
+        department_operations_summary,
+
+        df,
+
+    )
+
+    return build_result(
+
+        workload_name="Department Operations Summary",
+
+        dataset_size=dataset_size,
+
+        rows=len(df),
+
+        cpu_time=cpu_time,
+
+    )
+
+# =====================================================
+# Workload 5 - Risk Pipeline
+# =====================================================
+
+def risk_pipeline(df):
+
+    df = engineer_features(df)
+
+    df = calculate_risk(df)
+
+    return df
+
+
+def run_risk_pipeline_cpu(dataset_size):
+
+    df = load_benchmark_dataset(dataset_size)
+
+    _, cpu_time = measure_execution(
+
+        risk_pipeline,
+
+        df,
+
+    )
+
+    return build_result(
+
+        workload_name="Risk Pipeline",
+
+        dataset_size=dataset_size,
+
+        rows=len(df),
+
+        cpu_time=cpu_time,
+
+    )
+
+# =====================================================
+# Workload 6 - Recommendation Generation
+# =====================================================
+
+def recommendation_generation(df):
+
+    return generate_recommendations(df)
+
+
+def run_recommendation_cpu(dataset_size):
+
+    df = load_benchmark_dataset(dataset_size)
+
+    _, cpu_time = measure_execution(
+
+        recommendation_generation,
+
+        df,
+
+    )
+
+    return build_result(
+
+        workload_name="Recommendation Generation",
+
+        dataset_size=dataset_size,
+
+        rows=len(df),
+
+        cpu_time=cpu_time,
+
+    )
+
+# =====================================================
+# Workload 7 - Full Analytics Pipeline
+# =====================================================
+
+def full_pipeline(df):
+
+    return run_pipeline(df)
+
+
+def run_full_pipeline_cpu(dataset_size):
+
+    df = load_benchmark_dataset(dataset_size)
+
+    _, cpu_time = measure_execution(
+
+        full_pipeline,
+
+        df,
+
+    )
+
+    return build_result(
+
+        workload_name="Full Analytics Pipeline",
+
+        dataset_size=dataset_size,
+
+        rows=len(df),
+
+        cpu_time=cpu_time,
+
+    )
+
+
+# =====================================================
 # Benchmark Workload Registry
 # =====================================================
 
 CPU_WORKLOADS = {
     "Patient Lookup": run_patient_lookup_cpu,
     "Department Patient Lookup": run_department_lookup_cpu,
+    "Department Operations Summary": run_department_summary_cpu,
+    "Risk Pipeline": run_risk_pipeline_cpu,
+    "Recommendation Generation": run_recommendation_cpu,
+    "Full Analytics Pipeline": run_full_pipeline_cpu,
 }
