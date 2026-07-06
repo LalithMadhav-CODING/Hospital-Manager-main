@@ -10,6 +10,7 @@ from backend.patient_service import (
     get_dashboard,
 )
 from cloud.bigquery import restore_baseline
+from benchmark.benchmark import run_patient_lookup_cpu
 
 # --------------------------------------------------
 # Page Configuration
@@ -1127,12 +1128,113 @@ rerun the analytics pipeline, and refresh the dashboard.
 
             st.rerun()
 
-# ==================================================
-# Benchmark
-# ==================================================
+# ==========================================================
+# GPU Benchmark
+# ==========================================================
 
 elif page == "Benchmark":
 
     st.title("⚡ GPU Benchmark")
 
-    st.info("Coming in Phase 7.")
+    st.caption(
+        "Compare CPU (Pandas) and GPU (NVIDIA RAPIDS cuDF) "
+        "performance across ER Surge Intelligence workloads."
+    )
+
+    st.divider()
+
+    # --------------------------------------------------
+    # Benchmark Configuration
+    # --------------------------------------------------
+
+    st.subheader("Benchmark Configuration")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        dataset_size = st.selectbox(
+            "Dataset Size",
+            [
+                "10K",
+                "20K",
+                "50K",
+                "100K",
+                "250K",
+                "500K",
+                "1M",
+            ],
+        )
+
+    with col2:
+
+        workload = st.selectbox(
+            "Workload",
+            [
+                "Patient Lookup",
+                "Department Patient Lookup",
+                "Critical Patient Queue",
+                "Department Operations Summary",
+                "Risk Pipeline",
+                "Recommendation Generation",
+                "Full Analytics Pipeline",
+            ],
+        )
+
+    st.divider()
+
+    st.subheader("Execution Engine")
+
+    cpu_enabled = st.checkbox(
+        "CPU (Pandas)",
+        value=True,
+    )
+
+    gpu_enabled = st.checkbox(
+        "GPU (NVIDIA RAPIDS cuDF)",
+        value=True,
+    )
+
+    st.divider()
+
+    if st.button(
+        "▶ Run Benchmark",
+        use_container_width=True,
+        type="primary",
+    ):
+
+        if workload == "Patient Lookup":
+
+            with st.spinner("Running CPU benchmark..."):
+
+                result = run_patient_lookup_cpu(
+                    dataset_size
+                )
+
+            st.success("Benchmark Complete")
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                st.metric(
+                    "CPU Time",
+                    f"{result['cpu_time']:.6f} s",
+                )
+
+                st.metric(
+                    "Rows",
+                    f"{result['rows']:,}",
+                )
+
+            with col2:
+
+                st.metric(
+                    "Rows / sec",
+                    f"{result['rows_per_second']:,.0f}",
+                )
+
+                st.metric(
+                    "GPU",
+                    "Coming Soon",
+                )

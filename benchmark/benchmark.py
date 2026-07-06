@@ -1,217 +1,129 @@
-"""
-benchmark.py
+import time
 
-Benchmark Engine for ER Surge Intelligence.
-
-This module provides reusable benchmarking utilities for measuring
-operational workloads. It is intentionally independent of Streamlit,
-BigQuery, and RAPIDS so that the same interface can benchmark both
-CPU (Pandas) and GPU (cuDF) implementations.
-"""
-
-from dataclasses import dataclass, asdict
-from time import perf_counter
-from typing import Callable, Any
 import pandas as pd
-from backend.dashboard import build_dashboard
-from backend.pipeline import run_pipeline
-from backend.patient_service import get_dashboard
+
+from cloud.bigquery import run_query
 
 
-# ==========================================================
+# =====================================================
+# Benchmark Dataset Loader
+# =====================================================
+
+DATASET_TABLES = {
+    "10K": "benchmark_patients_10000",
+    "20K": "benchmark_patients_20000",
+    "50K": "benchmark_patients_50000",
+    "100K": "benchmark_patients_100000",
+    "250K": "benchmark_patients_250000",
+    "500K": "benchmark_patients_500000",
+    "1M": "benchmark_patients_1000000",
+}
+
+
+def load_benchmark_dataset(dataset_size: str) -> pd.DataFrame:
+    """
+    Load a benchmark dataset from BigQuery.
+
+    Benchmark timing DOES NOT include
+    dataset loading.
+    """
+
+    table = DATASET_TABLES[dataset_size]
+
+    query = f"""
+    SELECT *
+    FROM hospital_er.{table}
+    """
+
+    return run_query(query)
+
+
+# =====================================================
+# Benchmark Timer
+# =====================================================
+
+def measure_execution(func, *args, **kwargs):
+    """
+    Measure execution time of a workload.
+
+    Dataset loading is expected to happen
+    before calling this function.
+    """
+
+    start = time.perf_counter()
+
+    result = func(*args, **kwargs)
+
+    end = time.perf_counter()
+
+    elapsed = end - start
+
+    return result, elapsed
+
+
+# =====================================================
 # Benchmark Result
-# ==========================================================
+# =====================================================
 
-@dataclass
-class BenchmarkResult:
-    workload: str
-    backend: str
-    rows: int
-    execution_time: float
-    rows_per_second: float
-
-    def to_dict(self):
-        return asdict(self)
-
-
-# ==========================================================
-# Benchmark Engine
-# ==========================================================
-
-class BenchmarkEngine:
-
-    def run(
-        self,
-        workload_name: str,
-        backend: str,
-        dataframe: pd.DataFrame,
-        workload: Callable[..., Any],
-        *args,
-        **kwargs,
-    ) -> BenchmarkResult:
-        """
-        Execute a workload and measure execution time.
-        """
-
-        start = perf_counter()
-
-        workload(
-            dataframe,
-            *args,
-            **kwargs,
-        )
-
-        end = perf_counter()
-
-        execution_time = end - start
-
-        rows = len(dataframe)
-
-        rows_per_second = (
-            rows / execution_time
-            if execution_time > 0
-            else 0
-        )
-
-        return BenchmarkResult(
-            workload=workload_name,
-            backend=backend,
-            rows=rows,
-            execution_time=execution_time,
-            rows_per_second=rows_per_second,
-        )
-
-
-# ==========================================================
-# Utilities
-# ==========================================================
-
-def compare(cpu: BenchmarkResult,
-            gpu: BenchmarkResult) -> dict:
+def build_result(
+    workload_name: str,
+    dataset_size: str,
+    rows: int,
+    cpu_time: float,
+    gpu_time=None,
+):
     """
-    Compare CPU and GPU benchmark results.
+    Standard benchmark result object.
     """
 
-    speedup = (
-        cpu.execution_time / gpu.execution_time
-        if gpu.execution_time > 0
-        else 0
-    )
+    rows_per_second = rows / cpu_time if cpu_time > 0 else 0
+
+    speedup = None
+
+    if gpu_time not in (None, 0):
+        speedup = cpu_time / gpu_time
 
     return {
-        "workload": cpu.workload,
-        "rows": cpu.rows,
-        "cpu_time": cpu.execution_time,
-        "gpu_time": gpu.execution_time,
-        "cpu_rows_per_second": cpu.rows_per_second,
-        "gpu_rows_per_second": gpu.rows_per_second,
+        "workload": workload_name,
+        "dataset": dataset_size,
+        "rows": rows,
+        "cpu_time": cpu_time,
+        "gpu_time": gpu_time,
         "speedup": speedup,
+        "rows_per_second": rows_per_second,
     }
 
-# ==========================================================
-# Operational Workloads
-# ==========================================================
+# =====================================================
+# Workload 1 - Patient Lookup
+# =====================================================
 
-def patient_lookup(
-    dataframe: pd.DataFrame,
-    patient_id: str,
-) -> pd.DataFrame:
+def patient_lookup(df):
     """
     Benchmark workload:
-    Retrieve a patient using Patient ID.
+    Lookup a patient by ID.
     """
 
-    result = dataframe.loc[
-        dataframe["patient_id"] == patient_id
-    ]
+    patient_id = df.iloc[len(df) // 2]["patient_id"]
 
-    return result
+    return df[df["patient_id"] == patient_id]
 
-def department_patient_lookup(
-    dataframe: pd.DataFrame,
-    department: str,
-) -> pd.DataFrame:
+
+def run_patient_lookup_cpu(dataset_size: str):
     """
-    Benchmark workload:
-    Retrieve all patients belonging
-    to a department.
+    Execute the Patient Lookup benchmark using Pandas.
     """
 
-    return dataframe.loc[
-        dataframe["department"] == department
-    ]
+    df = load_benchmark_dataset(dataset_size)
 
-def critical_patient_queue(
-    dataframe: pd.DataFrame,
-    minimum_wait: int = 30,
-) -> pd.DataFrame:
-    """
-    Benchmark workload:
+    _, cpu_time = measure_execution(
+        patient_lookup,
+        df,
+    )
 
-    Retrieve every critical patient
-    waiting longer than the specified
-    threshold.
-    """
+    return build_result(
+        workload_name="Patient Lookup",
+        dataset_size=dataset_size,
+        rows=len(df),
+        cpu_time=cpu_time,
+    )
 
-    return dataframe.loc[
-        (dataframe["is_critical"] == True)
-        &
-        (dataframe["wait_time_min"] >= minimum_wait)
-    ]
-
-def department_operations_summary(
-    dataframe: pd.DataFrame,
-) -> pd.DataFrame:
-    """
-    Benchmark workload.
-
-    Execute the production dashboard
-    aggregation exactly as the
-    application does.
-    """
-
-    return build_dashboard(dataframe)
-
-def risk_pipeline(
-    dataframe: pd.DataFrame,
-):
-    """
-    Benchmark workload.
-
-    Execute the complete production
-    analytics pipeline.
-
-    This includes:
-
-    - Feature Engineering
-    - Risk Calculation
-    - Dashboard Generation
-    - Recommendation Generation
-    """
-
-    return run_pipeline(dataframe)
-
-def dashboard_refresh(
-    dataframe: pd.DataFrame = None,
-):
-    """
-    Benchmark workload.
-
-    Execute the production dashboard
-    refresh workflow exactly as the
-    application does.
-
-    Workflow:
-
-    BigQuery
-        ↓
-    load_patients()
-        ↓
-    run_pipeline()
-        ↓
-    Dashboard
-        ↓
-    Recommendations
-    """
-
-    return get_dashboard()

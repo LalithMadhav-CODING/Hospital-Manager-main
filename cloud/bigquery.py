@@ -57,6 +57,39 @@ def append_patients(patients_df: pd.DataFrame):
 
     job.result()
 
+def upload_benchmark_dataset(
+    dataset_df: pd.DataFrame,
+    table_name: str,
+):
+    """
+    Upload (or replace) a benchmark dataset.
+
+    Parameters
+    ----------
+    dataset_df : pd.DataFrame
+        Benchmark dataset to upload.
+
+    table_name : str
+        BigQuery table name
+        (example: benchmark_100k).
+    """
+
+    table_id = (
+        f"{PROJECT_ID}.{DATASET}.{table_name}"
+    )
+
+    job_config = bigquery.LoadJobConfig(
+        write_disposition="WRITE_TRUNCATE",
+    )
+
+    job = client.load_table_from_dataframe(
+        dataset_df,
+        table_id,
+        job_config=job_config,
+    )
+
+    job.result()
+
 def run_query(sql: str) -> pd.DataFrame:
     """
     Execute any SQL query.
