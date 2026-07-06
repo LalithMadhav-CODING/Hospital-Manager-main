@@ -20,12 +20,17 @@ DATASET_TABLES = {
 }
 
 
+import streamlit as st
+
+
+@st.cache_data(show_spinner=False)
 def load_benchmark_dataset(dataset_size: str) -> pd.DataFrame:
     """
     Load a benchmark dataset from BigQuery.
 
-    Benchmark timing DOES NOT include
-    dataset loading.
+    The dataset is cached so that benchmark timings
+    measure only the workload execution and not
+    repeated BigQuery downloads.
     """
 
     table = DATASET_TABLES[dataset_size]
@@ -90,7 +95,7 @@ def build_result(
         "cpu_time": cpu_time,
         "gpu_time": gpu_time,
         "speedup": speedup,
-        "rows_per_second": rows_per_second,
+
     }
 
 # =====================================================
@@ -103,7 +108,10 @@ def patient_lookup(df):
     Lookup a patient by ID.
     """
 
-    patient_id = df.iloc[len(df) // 2]["patient_id"]
+    patient_id = df["patient_id"].sample(
+        n=1,
+        random_state=None,
+    ).iloc[0]
 
     return df[df["patient_id"] == patient_id]
 
@@ -127,3 +135,48 @@ def run_patient_lookup_cpu(dataset_size: str):
         cpu_time=cpu_time,
     )
 
+# =====================================================
+# Workload 2 - Department Patient Lookup
+# =====================================================
+
+def department_patient_lookup(df):
+    """
+    Benchmark workload:
+    Retrieve all patients from General ER.
+    """
+
+    department = (
+        df["department"]
+        .sample(n=1)
+        .iloc[0]
+    )
+
+    return df[
+        df["department"] == department
+    ]
+
+
+def run_department_lookup_cpu(dataset_size: str):
+
+    df = load_benchmark_dataset(dataset_size)
+
+    _, cpu_time = measure_execution(
+        department_patient_lookup,
+        df,
+    )
+
+    return build_result(
+        workload_name="Department Patient Lookup",
+        dataset_size=dataset_size,
+        rows=len(df),
+        cpu_time=cpu_time,
+    )
+
+# =====================================================
+# Benchmark Workload Registry
+# =====================================================
+
+CPU_WORKLOADS = {
+    "Patient Lookup": run_patient_lookup_cpu,
+    "Department Patient Lookup": run_department_lookup_cpu,
+}

@@ -10,8 +10,7 @@ from backend.patient_service import (
     get_dashboard,
 )
 from cloud.bigquery import restore_baseline
-from benchmark.benchmark import run_patient_lookup_cpu
-
+from benchmark.benchmark import CPU_WORKLOADS
 # --------------------------------------------------
 # Page Configuration
 # --------------------------------------------------
@@ -1203,38 +1202,66 @@ elif page == "Benchmark":
         type="primary",
     ):
 
-        if workload == "Patient Lookup":
+        if workload not in CPU_WORKLOADS:
 
-            with st.spinner("Running CPU benchmark..."):
+            st.warning("This workload has not been implemented yet.")
 
-                result = run_patient_lookup_cpu(
-                    dataset_size
-                )
+        else:
 
-            st.success("Benchmark Complete")
+            with st.spinner("Running CPU Benchmark..."):
 
-            col1, col2 = st.columns(2)
+                result = CPU_WORKLOADS[workload](dataset_size)
 
-            with col1:
+            st.success("Benchmark Completed")
+
+            st.subheader("Benchmark Results")
+
+            cpu_col, gpu_col, speed_col = st.columns(3)
+
+            # ------------------------------------------
+            # CPU Results
+            # ------------------------------------------
+
+            with cpu_col:
 
                 st.metric(
-                    "CPU Time",
+                    "CPU Execution Time",
                     f"{result['cpu_time']:.6f} s",
                 )
 
                 st.metric(
-                    "Rows",
-                    f"{result['rows']:,}",
+                    "Dataset Size",
+                    f"{result['rows']:,} rows",
                 )
 
-            with col2:
+            # ------------------------------------------
+            # GPU Results
+            # ------------------------------------------
+
+            with gpu_col:
 
                 st.metric(
-                    "Rows / sec",
-                    f"{result['rows_per_second']:,.0f}",
+                    "GPU Execution Time",
+                    "Not Executed",
                 )
 
                 st.metric(
-                    "GPU",
-                    "Coming Soon",
+                    "Execution Engine",
+                    "CPU Only",
+                )
+
+            # ------------------------------------------
+            # Comparison
+            # ------------------------------------------
+
+            with speed_col:
+
+                st.metric(
+                    "Speed-up",
+                    "--",
+                )
+
+                st.metric(
+                    "Status",
+                    "CPU Complete",
                 )
