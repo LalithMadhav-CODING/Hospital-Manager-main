@@ -2,3 +2,13 @@ streamlit>=1.38
 pandas>=2.0
 numpy>=1.24
 pyarrow>=14.0
+plotly
+
+google-cloud-bigquery
+google-auth
+google-genai
+
+pandas_gbq
+google-cloud-bigquery-storage
+pyarrow
+db-dtypes

@@ -67,3 +67,12 @@ HIGH_RISK = 0.85
 # --------------------------------------------------
 
 AUTO_REFRESH_PATIENTS = 5
+
+# --------------------------------------------------
+# Operational Dataset Configuration
+# --------------------------------------------------
+
+ACTIVE_ER_STATUSES = [
+    "Waiting",
+    "Under Treatment",
+]
