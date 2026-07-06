@@ -4,9 +4,15 @@ import pandas as pd
 
 SERVICE_ACCOUNT = Path("credentials/service_account.json")
 
-client = bigquery.Client.from_service_account_json(
-    SERVICE_ACCOUNT
-)
+if SERVICE_ACCOUNT.exists():
+
+    client = bigquery.Client.from_service_account_json(
+        str(SERVICE_ACCOUNT)
+    )
+
+else:
+
+    client = bigquery.Client()
 
 PROJECT_ID = client.project
 
