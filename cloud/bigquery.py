@@ -48,3 +48,26 @@ def run_query(sql: str) -> pd.DataFrame:
     """
 
     return client.query(sql).to_dataframe()
+
+def restore_baseline():
+    """
+    Restore the live patients table from the
+    immutable baseline table.
+    """
+
+    client = get_bigquery_client()
+
+    query = """
+    DELETE FROM `hospital_er.patients`
+    WHERE TRUE;
+
+    INSERT INTO `hospital_er.patients`
+
+    SELECT *
+
+    FROM `hospital_er.patients_baseline`;
+    """
+
+    job = client.query(query)
+
+    job.result()

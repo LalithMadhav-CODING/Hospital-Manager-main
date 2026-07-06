@@ -8,6 +8,7 @@ from backend.patient_service import (
     register_patient,
     get_dashboard,
 )
+from cloud.bigquery import restore_baseline
 
 # --------------------------------------------------
 # Page Configuration
@@ -997,7 +998,75 @@ rerun the analytics pipeline, and refresh the dashboard.
         st.rerun()
 
     elif reset:
-        st.success("Reset action will be connected in Phase 6.3")
+
+        with st.spinner("Restoring hospital state..."):
+
+            restore_baseline()
+
+            from datetime import datetime
+
+            timestamp = datetime.now().strftime("%H:%M:%S")
+
+            st.session_state["scenario_result"] = {
+
+                "title": "🔄 Hospital State Restored",
+
+                "subtitle": (
+                    "The live hospital data has been restored "
+                    "from the baseline BigQuery snapshot."
+                ),
+
+                "steps": [
+
+                    {
+                        "icon": "🗑️",
+                        "title": "Live Table Cleared",
+                        "description": "Current simulation data removed.",
+                        "time": timestamp,
+                    },
+
+                    {
+                        "icon": "☁️",
+                        "title": "Baseline Restored",
+                        "description": "Baseline patient records copied into the live table.",
+                        "time": timestamp,
+                    },
+
+                    {
+                        "icon": "📊",
+                        "title": "Dashboard Ready",
+                        "description": "Operational dashboard restored.",
+                        "time": timestamp,
+                    },
+
+                ],
+            }
+
+            st.session_state["operations_feed"].insert(
+                0,
+                {
+                    "icon": "🔄",
+                    "title": "Hospital Reset",
+                    "time": timestamp,
+                    "summary": "Baseline Restored",
+                    "details": [
+                        (
+                            "Source",
+                            "BigQuery Baseline Snapshot",
+                        ),
+                        (
+                            "Status",
+                            "Hospital Restored",
+                        ),
+                    ],
+                },
+            )
+
+            st.session_state["operations_feed"] = (
+                st.session_state["operations_feed"][:10]
+            )
+
+        st.rerun()
 
     if "scenario_result" in st.session_state:
 
