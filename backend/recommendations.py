@@ -37,17 +37,17 @@ def _build_recommendation(avg_risk, avg_wait, occupancy):
         priority = "Routine"
 
         actions.append(
-            "Operations within normal limits"
+            "Operations within normal limits. Continue routine monitoring and maintain current staffing levels."
         )
 
     if avg_wait > 45:
         actions.append(
-            "Investigate excessive patient waiting time"
+            "Review patient flow to reduce prolonged waiting times."
         )
 
     if occupancy > 90:
         actions.append(
-            "Department occupancy exceeds 90%"
+            "Department occupancy exceeds 90%. Prepare overflow capacity and consider staff reallocation."
         )
 
     return {

@@ -97,7 +97,7 @@ if page == "Dashboard":
     )
 
     c5.metric(
-        "🛏 Occupancy",
+        "📊 Capacity Utilization",
         f"{occupancy:.1f}%",
     )
 
@@ -227,10 +227,54 @@ if page == "Dashboard":
 
     st.divider()
 
-    st.subheader("Department Overview")
+    # ----------------------------------------
+    # Department Overview
+    # ----------------------------------------
+
+    st.subheader("Department Operations Summary")
+
+    department_table = dashboard[
+        [
+            "department",
+            "total_patients",
+            "occupancy_percent",
+            "average_wait",
+            "critical_patients",
+            "average_risk",
+        ]
+    ].copy()
+
+    department_table.columns = [
+        "Department",
+        "Patients",
+        "Capacity Utilization (%)",
+        "Average Wait (min)",
+        "Critical Patients",
+        "Average Risk",
+    ]
+
+    department_table = department_table.sort_values(
+        by="Capacity Utilization (%)",
+        ascending=False,
+    )
+
+    department_table["Capacity Utilization (%)"] = (
+        department_table["Capacity Utilization (%)"]
+        .round(1)
+    )
+
+    department_table["Average Wait (min)"] = (
+        department_table["Average Wait (min)"]
+        .round(1)
+    )
+
+    department_table["Average Risk"] = (
+        department_table["Average Risk"]
+        .round(2)
+    )
 
     st.dataframe(
-        dashboard,
+        department_table,
         use_container_width=True,
         hide_index=True,
     )
@@ -254,10 +298,9 @@ if page == "Dashboard":
         icon = risk_icons.get(dept["risk"], "⚪")
 
         title = (
-            f"{icon} "
-            f"{dept['department']} • "
-            f"{dept['risk']} • "
-            f"{dept['occupancy']:.1f}% Occupancy"
+            f"🏥{dept['department']} • "
+            f"|{icon}  {dept['risk']} • "
+            f"|{dept['occupancy']:.1f}% Occupancy"
         )
 
         with st.expander(title):
