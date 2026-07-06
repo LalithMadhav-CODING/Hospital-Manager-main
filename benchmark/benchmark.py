@@ -15,6 +15,7 @@ from typing import Callable, Any
 import pandas as pd
 from backend.dashboard import build_dashboard
 from backend.pipeline import run_pipeline
+from backend.patient_service import get_dashboard
 
 
 # ==========================================================
@@ -189,3 +190,28 @@ def risk_pipeline(
     """
 
     return run_pipeline(dataframe)
+
+def dashboard_refresh(
+    dataframe: pd.DataFrame = None,
+):
+    """
+    Benchmark workload.
+
+    Execute the production dashboard
+    refresh workflow exactly as the
+    application does.
+
+    Workflow:
+
+    BigQuery
+        ↓
+    load_patients()
+        ↓
+    run_pipeline()
+        ↓
+    Dashboard
+        ↓
+    Recommendations
+    """
+
+    return get_dashboard()
