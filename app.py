@@ -20,6 +20,13 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
+# Session State Initialization
+# --------------------------------------------------
+
+if "operations_feed" not in st.session_state:
+    st.session_state["operations_feed"] = []
+
+# --------------------------------------------------
 # Sidebar
 # --------------------------------------------------
 
@@ -67,6 +74,32 @@ if page == "Dashboard":
     st.caption(
         f"Last Updated: {pd.Timestamp.now().strftime('%d %b %Y %H:%M:%S')}"
     )
+
+    # ----------------------------------------
+    # Operational Impact Feed
+    # ----------------------------------------
+
+    if st.session_state["operations_feed"]:
+
+        st.subheader("📡 Operational Impact Feed")
+
+        for event in st.session_state["operations_feed"]:
+
+            with st.expander(
+                f"{event['icon']} {event['title']} • {event['time']} • {event['summary']}"
+            ):
+
+                for label, value in event["details"]:
+
+                    left, right = st.columns([2, 3])
+
+                    with left:
+                        st.markdown(f"**{label}**")
+
+                    with right:
+                        st.write(value)
+
+        st.divider()
 
     st.divider()
 
@@ -573,6 +606,12 @@ rerun the analytics pipeline, and refresh the dashboard.
 
             timestamp = datetime.now().strftime("%H:%M:%S")
 
+            dashboard_after, recommendation_after = get_dashboard()
+
+            capacity = dashboard_after["occupancy_percent"].mean()
+
+            risk = recommendation_after["overall"]["risk"]
+
             st.session_state["scenario_result"] = {
                 "title": "🟢 Routine Arrival Completed",
                 "subtitle": (
@@ -618,6 +657,26 @@ rerun the analytics pipeline, and refresh the dashboard.
                     },
                 ],
             }
+
+            st.session_state["operations_feed"].insert(
+                0,
+                {
+                    "icon": "🟢",
+                    "title": "Routine Arrival",
+                    "time": timestamp,
+                    "summary": "+1 Patient Registered • Routine Walk-in",
+                    "details": [
+                        ("Department", patient["department"]),
+                        ("Arrival Mode", patient["arrival_mode"]),
+                        ("Overall Risk", risk),
+                        ("Capacity Utilization", f"{capacity:.1f}%"),
+                    ],
+                },
+            )
+
+            st.session_state["operations_feed"] = (
+                st.session_state["operations_feed"][:10]
+            )
 
         st.rerun()
 

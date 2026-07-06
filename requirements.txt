@@ -9,3 +9,6 @@ google-auth
 google-genai
 
 pandas_gbq
+google-cloud-bigquery-storage
+pyarrow
+db-dtypes
