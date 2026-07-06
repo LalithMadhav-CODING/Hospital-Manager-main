@@ -1,51 +1,38 @@
 """
 Gemini Service
 
-This module is responsible only for generating
-natural language explanations of the operational
-state of the Emergency Department.
+Generates operational explanations for
+ER Surge Intelligence.
 
-No business logic should exist here.
+This module contains NO business logic.
+It only converts structured operational
+metrics into natural language.
 """
 
 import os
 
-import google.generativeai as genai
-
-
-# --------------------------------------------------
-# Configure Gemini
-# --------------------------------------------------
-
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-
-if GOOGLE_API_KEY:
-    genai.configure(api_key=GOOGLE_API_KEY)
+from google import genai
 
 
 MODEL_NAME = "gemini-2.5-flash"
 
 
-# --------------------------------------------------
-# Prompt Builder
-# --------------------------------------------------
-
 def _build_prompt(metrics: dict) -> str:
     """
-    Convert structured operational metrics
-    into a prompt for Gemini.
+    Build the prompt sent to Gemini.
     """
 
     return f"""
 You are an Emergency Department Operations Assistant.
 
-IMPORTANT:
+You explain hospital operational metrics.
 
-- Do NOT provide medical advice.
+IMPORTANT RULES
+
 - Do NOT diagnose patients.
+- Do NOT provide medical advice.
 - Do NOT invent values.
-- Use ONLY the supplied operational metrics.
-- Focus only on hospital operations.
+- Use ONLY the supplied metrics.
 
 Department:
 {metrics["department"]}
@@ -62,7 +49,7 @@ Average Wait:
 Critical Patients:
 {metrics["critical_patients"]}
 
-Average Risk:
+Average Operational Risk:
 {metrics["average_risk"]:.2f}
 
 Risk Level:
@@ -74,41 +61,46 @@ Priority:
 Recommended Actions:
 {", ".join(metrics["actions"])}
 
-Write a concise operational report.
+Generate a concise operational report.
 
-Format:
+Use EXACTLY these headings:
 
-Situation Summary
+### Situation Summary
 
-Key Observations
+### Key Observations
 
-Operational Concerns
+### Operational Concerns
 
-Recommended Actions
+### Recommended Actions
 
-Keep the response under 150 words.
+Maximum 150 words.
 """
 
 
-# --------------------------------------------------
-# Public API
-# --------------------------------------------------
-
 def generate_operational_summary(metrics: dict) -> str:
     """
-    Generate an operational explanation
-    using Gemini.
+    Generate a natural-language operational
+    explanation using Gemini.
     """
 
-    if not GOOGLE_API_KEY:
-        return (
-            "Gemini API key not configured."
+    api_key = os.getenv("GOOGLE_API_KEY")
+
+    if not api_key:
+        return "Gemini API key not configured."
+
+    try:
+
+        client = genai.Client(
+            api_key=api_key,
         )
 
-    model = genai.GenerativeModel(MODEL_NAME)
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=_build_prompt(metrics),
+        )
 
-    response = model.generate_content(
-        _build_prompt(metrics)
-    )
+        return response.text
 
-    return response.text
+    except Exception as e:
+
+        return f"Gemini Error: {e}"

@@ -337,6 +337,10 @@ if page == "Dashboard":
             for action in dept["actions"]:
                 st.success(action)
             
+            # ----------------------------------------
+            # Gemini Explanation
+            # ----------------------------------------
+
             st.divider()
 
             if st.button(
