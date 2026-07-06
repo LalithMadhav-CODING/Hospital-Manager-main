@@ -55,17 +55,15 @@ def restore_baseline():
     immutable baseline table.
     """
 
-    client = get_bigquery_client()
-
-    query = """
-    DELETE FROM `hospital_er.patients`
+    query = f"""
+    DELETE FROM `{TABLE_ID}`
     WHERE TRUE;
 
-    INSERT INTO `hospital_er.patients`
+    INSERT INTO `{TABLE_ID}`
 
     SELECT *
 
-    FROM `hospital_er.patients_baseline`;
+    FROM `{PROJECT_ID}.{DATASET}.patients_baseline`;
     """
 
     job = client.query(query)
