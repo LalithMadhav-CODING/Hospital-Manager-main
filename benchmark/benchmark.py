@@ -12,6 +12,16 @@ from backend.recommendations import generate_recommendations
 
 from backend.pipeline import run_pipeline
 
+try:
+
+    import cudf
+
+    GPU_AVAILABLE = True
+
+except ImportError:
+
+    GPU_AVAILABLE = False
+
 # =====================================================
 # Benchmark Dataset Loader
 # =====================================================
@@ -49,6 +59,19 @@ def load_benchmark_dataset(dataset_size: str) -> pd.DataFrame:
 
     return run_query(query)
 
+def load_gpu_benchmark_dataset(dataset_size):
+    """
+    Load benchmark dataset as a cuDF DataFrame.
+    """
+
+    if not GPU_AVAILABLE:
+        raise RuntimeError(
+            "GPU environment not available."
+        )
+
+    pdf = load_benchmark_dataset(dataset_size)
+
+    return cudf.DataFrame.from_pandas(pdf)
 
 # =====================================================
 # Benchmark Timer
@@ -72,6 +95,22 @@ def measure_execution(func, *args, **kwargs):
 
     return result, elapsed
 
+def run_gpu_workload(
+    dataset_size,
+    workload,
+    workload_name,
+):
+
+    gdf = load_gpu_benchmark_dataset(
+        dataset_size
+    )
+
+    _, gpu_time = measure_execution(
+        workload,
+        gdf,
+    )
+
+    return gpu_time
 
 # =====================================================
 # Benchmark Result

@@ -1210,7 +1210,41 @@ elif page == "Benchmark":
 
             with st.spinner("Running CPU Benchmark..."):
 
-                result = CPU_WORKLOADS[workload](dataset_size)
+                result = CPU_WORKLOADS[
+                    workload
+                ](dataset_size)
+
+                gpu_time = None
+
+                if gpu_enabled:
+
+                    try:
+
+                        gpu_time = run_gpu_workload(
+
+                            dataset_size,
+
+                            WORKLOAD_FUNCTIONS[
+                                workload
+                            ],
+
+                            workload,
+
+                        )
+
+                    except Exception:
+
+                        gpu_time = None
+
+                result["gpu_time"] = gpu_time
+
+                if gpu_time:
+
+                    result["speedup"] = (
+                        result["cpu_time"]
+                        /
+                        gpu_time
+                    )
 
             st.success("Benchmark Completed")
 
@@ -1225,7 +1259,7 @@ elif page == "Benchmark":
             with cpu_col:
 
                 st.metric(
-                    "CPU Execution Time",
+                    "CPU Execution",
                     f"{result['cpu_time']:.6f} s",
                 )
 
@@ -1240,14 +1274,23 @@ elif page == "Benchmark":
 
             with gpu_col:
 
-                st.metric(
-                    "GPU Execution Time",
-                    "Not Executed",
-                )
+                if result.get("gpu_time") is not None:
+
+                    st.metric(
+                        "GPU Execution",
+                        f"{result['gpu_time']:.6f} s",
+                    )
+
+                else:
+
+                    st.metric(
+                        "GPU Execution",
+                        "Unavailable",
+                    )
 
                 st.metric(
                     "Execution Engine",
-                    "CPU Only",
+                    "CPU + GPU" if result.get("gpu_time") is not None else "CPU Only",
                 )
 
             # ------------------------------------------
@@ -1256,12 +1299,21 @@ elif page == "Benchmark":
 
             with speed_col:
 
-                st.metric(
-                    "Speed-up",
-                    "--",
-                )
+                if result.get("speedup") is not None:
+
+                    st.metric(
+                        "Speed-up",
+                        f"{result['speedup']:.2f}×",
+                    )
+
+                else:
+
+                    st.metric(
+                        "Speed-up",
+                        "--",
+                    )
 
                 st.metric(
                     "Status",
-                    "CPU Complete",
+                    "Completed",
                 )
