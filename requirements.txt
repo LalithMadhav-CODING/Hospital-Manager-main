@@ -6,4 +6,4 @@ plotly
 
 google-cloud-bigquery
 google-auth
-google-generativeai
+google-genai
