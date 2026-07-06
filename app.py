@@ -769,7 +769,100 @@ rerun the analytics pipeline, and refresh the dashboard.
         st.rerun()
 
     elif mass_casualty:
-        st.success("Simulation action will be connected in Phase 6.2")
+
+        with st.spinner("Simulating Mass Casualty Incident..."):
+
+            from datetime import datetime
+            import random
+
+            timestamp = datetime.now().strftime("%H:%M:%S")
+
+            progress = st.progress(0)
+
+            for i in range(30):
+
+                patient = create_routine_patient()
+
+                # -----------------------------
+                # Emergency Scenario Overrides
+                # -----------------------------
+
+                patient["arrival_mode"] = random.choices(
+                    ["Ambulance", "Walk-in"],
+                    weights=[70, 30],
+                )[0]
+
+                patient["triage_level"] = random.choices(
+                    [1, 2, 3],
+                    weights=[40, 40, 20],
+                )[0]
+
+                patient["is_critical"] = random.random() < 0.40
+
+                patient["wait_time_min"] = random.randint(0, 15)
+
+                patient["department"] = random.choice(
+                    [
+                        "General ER",
+                        "General ER",
+                        "General ER",
+                        "Orthopedics",
+                        "Neurology",
+                        "Cardiology",
+                    ]
+                )
+
+                register_patient(patient)
+
+                progress.progress((i + 1) / 30)
+
+            st.session_state["scenario_result"] = {
+                "title": "🚨 Mass Casualty Incident Completed",
+                "subtitle": (
+                    "30 emergency patients were successfully registered. "
+                    "Operational analytics have been refreshed."
+                ),
+                "steps": [
+                    {
+                        "icon": "🚨",
+                        "title": "30 Emergency Patients Generated",
+                        "description": "Mass casualty scenario simulated.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "☁️",
+                        "title": "BigQuery Updated",
+                        "description": "All patient records inserted successfully.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "📊",
+                        "title": "Analytics Pipeline Executed",
+                        "description": "Operational metrics refreshed.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "⚠️",
+                        "title": "Risk Engine Updated",
+                        "description": "Department risks recalculated.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "📋",
+                        "title": "Recommendations Generated",
+                        "description": "Department recommendations updated.",
+                        "time": timestamp,
+                    },
+                    {
+                        "icon": "✨",
+                        "title": "Gemini Ready",
+                        "description": "AI operational explanation available.",
+                        "time": timestamp,
+                    },
+                ],
+            }
+
+        st.rerun()
 
     elif reset:
         st.success("Reset action will be connected in Phase 6.3")
