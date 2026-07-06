@@ -13,6 +13,8 @@ from dataclasses import dataclass, asdict
 from time import perf_counter
 from typing import Callable, Any
 import pandas as pd
+from backend.dashboard import build_dashboard
+from backend.pipeline import run_pipeline
 
 
 # ==========================================================
@@ -123,3 +125,67 @@ def patient_lookup(
     ]
 
     return result
+
+def department_patient_lookup(
+    dataframe: pd.DataFrame,
+    department: str,
+) -> pd.DataFrame:
+    """
+    Benchmark workload:
+    Retrieve all patients belonging
+    to a department.
+    """
+
+    return dataframe.loc[
+        dataframe["department"] == department
+    ]
+
+def critical_patient_queue(
+    dataframe: pd.DataFrame,
+    minimum_wait: int = 30,
+) -> pd.DataFrame:
+    """
+    Benchmark workload:
+
+    Retrieve every critical patient
+    waiting longer than the specified
+    threshold.
+    """
+
+    return dataframe.loc[
+        (dataframe["is_critical"] == True)
+        &
+        (dataframe["wait_time_min"] >= minimum_wait)
+    ]
+
+def department_operations_summary(
+    dataframe: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Benchmark workload.
+
+    Execute the production dashboard
+    aggregation exactly as the
+    application does.
+    """
+
+    return build_dashboard(dataframe)
+
+def risk_pipeline(
+    dataframe: pd.DataFrame,
+):
+    """
+    Benchmark workload.
+
+    Execute the complete production
+    analytics pipeline.
+
+    This includes:
+
+    - Feature Engineering
+    - Risk Calculation
+    - Dashboard Generation
+    - Recommendation Generation
+    """
+
+    return run_pipeline(dataframe)
