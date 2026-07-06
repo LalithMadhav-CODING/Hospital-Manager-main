@@ -697,6 +697,10 @@ rerun the analytics pipeline, and refresh the dashboard.
                 register_patient(patient)
 
                 progress.progress((i + 1) / 5)
+            
+            dashboard_after, recommendation_after = get_dashboard()
+            capacity = dashboard_after["occupancy_percent"].mean()
+            risk = recommendation_after["overall"]["risk"]
 
             st.session_state["scenario_result"] = {
                 "title": "🟡 Patient Surge Completed",
@@ -743,6 +747,26 @@ rerun the analytics pipeline, and refresh the dashboard.
                     },
                 ],
             }
+
+            st.session_state["operations_feed"].insert(
+                0,
+                {
+                    "icon": "🟡",
+                    "title": "Patient Surge",
+                    "time": timestamp,
+                    "summary": "+5 Patients • Capacity Increased",
+                    "details": [
+                        ("Patients Added", "5"),
+                        ("Scenario", "Routine Patient Surge"),
+                        ("Overall Risk", risk),
+                        ("Capacity Utilization", f"{capacity:.1f}%"),
+                    ],
+                },
+            )
+
+            st.session_state["operations_feed"] = (
+                st.session_state["operations_feed"][:10]
+            )
 
         st.rerun()
 
@@ -824,6 +848,31 @@ rerun the analytics pipeline, and refresh the dashboard.
                     },
                 ],
             }
+
+            dashboard_after, recommendation_after = get_dashboard()
+            capacity = dashboard_after["occupancy_percent"].mean()
+            risk = recommendation_after["overall"]["risk"]
+
+            st.session_state["operations_feed"].insert(
+                0,
+                {
+                    "icon": "🔴",
+                    "title": "Critical Ambulance Arrival",
+                    "time": timestamp,
+                    "summary": "Critical Patient • High Priority",
+                    "details": [
+                        ("Department", patient["department"]),
+                        ("Arrival Mode", "Ambulance"),
+                        ("Critical Patient", "Yes"),
+                        ("Overall Risk", risk),
+                        ("Capacity Utilization", f"{capacity:.1f}%"),
+                    ],
+                },
+            )
+
+            st.session_state["operations_feed"] = (
+                st.session_state["operations_feed"][:10]
+            )
 
         st.rerun()
 
@@ -920,6 +969,30 @@ rerun the analytics pipeline, and refresh the dashboard.
                     },
                 ],
             }
+
+            dashboard_after, recommendation_after = get_dashboard()
+            capacity = dashboard_after["occupancy_percent"].mean()
+            risk = recommendation_after["overall"]["risk"]
+
+            st.session_state["operations_feed"].insert(
+                0,
+                {
+                    "icon": "🚨",
+                    "title": "Mass Casualty Incident",
+                    "time": timestamp,
+                    "summary": "+30 Patients • Hospital Under Stress",
+                    "details": [
+                        ("Patients Added", "30"),
+                        ("Scenario", "Mass Casualty"),
+                        ("Overall Risk", risk),
+                        ("Capacity Utilization", f"{capacity:.1f}%"),
+                    ],
+                },
+            )
+
+            st.session_state["operations_feed"] = (
+                st.session_state["operations_feed"][:10]
+            )
 
         st.rerun()
 
